@@ -7,6 +7,7 @@ class LLMEndpoint:
     name: str
     url: str
     description: str
+    model: str
 
 class ConfigHandler:
     def __init__(self, config_path: str = "config.yaml"):
@@ -21,7 +22,8 @@ class ConfigHandler:
                     LLMEndpoint(
                         name=endpoint['name'],
                         url=endpoint['url'],
-                        description=endpoint['description']
+                        description=endpoint['description'],
+                        model=endpoint["model"]
                     )
                     for endpoint in config['llm_endpoints']
                 ]

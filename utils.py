@@ -4,20 +4,21 @@ import json
 import jinja2
 import asyncio
 
-async def test_prompt_with_model(url: str, prompt: str) -> str:
+async def test_prompt_with_model(url: str, prompt: str, model: str) -> str:
     async with aiohttp.ClientSession() as session:
         try:
-            async with session.post(url, json={"prompt": prompt}) as response:
-                result = await response.json()
-                return result.get("response", "Error: No response received")
+            async with session.post(url, json={"prompt": prompt, "model": model, "stream": False}) as response:
+                result = await response.text()
+                response = json.loads(result)
+                return response["response"]
         except Exception as e:
             return f"Error: {str(e)}"
 
 
-async def test_multiple_models(urls: List[str], prompt: str) -> dict:
-    tasks = [test_prompt_with_model(url, prompt) for url in urls]
+async def test_multiple_models(urls: List[str], prompt: str, models: List[str]) -> dict:
+    tasks = [test_prompt_with_model(url, prompt, model) for url, model in zip(urls, models)]
     results = await asyncio.gather(*tasks)
-    return dict(zip(urls, results))
+    return dict(zip(models, results))
 
 def get_template_variables(template_str: str) -> List[str]:
     """Extract variable names from a Jinja2 template string"""

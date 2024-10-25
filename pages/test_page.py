@@ -13,7 +13,7 @@ from utils import (
 )
 
 config = ConfigHandler()
-MAX_ENDPOINTS = 5
+MAX_ENDPOINTS = 3
 
 
 def show_test_page():
@@ -90,6 +90,7 @@ def show_test_page():
                     test_multiple_models(
                         [endpoint.url for endpoint in selected_endpoints],
                         rendered_prompt,
+                        [endpoint.model for endpoint in selected_endpoints],
                     )
                 )
 
