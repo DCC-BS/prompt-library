@@ -1,3 +1,4 @@
 streamlit
 jinja2
 aiohttp
+pyyaml
