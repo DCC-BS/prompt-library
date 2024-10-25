@@ -5,6 +5,7 @@ from jinja2 import Template
 import jinja2
 import asyncio
 import aiohttp
+import time
 
 async def test_prompt_with_model(url: str, prompt: str) -> str:
     async with aiohttp.ClientSession() as session:
@@ -25,38 +26,67 @@ def main():
     
     # Initialize database
     init_db()
+
+    if 'page' not in st.session_state:
+        st.session_state.page = "Browse Prompts"
     
     # Sidebar navigation
-    page = st.sidebar.selectbox(
+    st.session_state.page = st.sidebar.selectbox(
         "Choose a page",
-        ["Browse Prompts", "Create New Prompt", "Test Prompts"]
+        ["Browse Prompts", "Create New Prompt", "Test Prompts"],
+        index=["Browse Prompts", "Create New Prompt", "Test Prompts"].index(st.session_state.page)
     )
     
-    if page == "Browse Prompts":
+    if st.session_state.page == "Browse Prompts":
         show_browse_page()
-    elif page == "Create New Prompt":
+    elif st.session_state.page == "Create New Prompt":
         show_create_page()
-    elif page == "Test Prompts":
+    elif st.session_state.page == "Test Prompts":
         show_test_page()
 
 def show_browse_page():
     st.header("Browse Prompts")
     prompts = get_all_prompts()
+
+    if 'delete_confirmation' not in st.session_state:
+        st.session_state.delete_confirmation = None
     
     for prompt in prompts:
         with st.expander(f"{prompt.name} by {prompt.author} (👍 {prompt.upvotes})"):
-            st.text_area("Template", prompt.template, height=100, key=f"template_{prompt.id}")
-            st.text_area("Example Values", prompt.example_values, height=50, key=f"examples_{prompt.id}")
-            
-            col1, col2 = st.columns(2)
+            md_text = (
+                "## Template\n"
+                f"{prompt.template}\n"
+
+                "## Example Values\n"
+                f"`{prompt.example_values}`"
+            )
+            st.markdown(md_text)
+
+            col1, col2, col3 = st.columns(3)
             with col1:
                 if st.button("Upvote", key=f"upvote_{prompt.id}"):
                     upvote_prompt(prompt.id)
-                    st.rerun()
+                    st.success("Upvote recorded!")
             with col2:
                 if st.button("Edit", key=f"edit_{prompt.id}"):
                     st.session_state.editing_prompt = prompt
+                    st.session_state.page = "Create New Prompt"
                     st.rerun()
+            with col3:
+                if st.session_state.delete_confirmation == prompt.id:
+                    if st.button("Confirm Delete", key=f"confirm_delete_{prompt.id}"):
+                        delete_prompt(prompt.id)
+                        st.session_state.delete_confirmation = None
+                        st.success("Prompt deleted successfully!")
+                        time.sleep(1)
+                        st.rerun()
+                    if st.button("Cancel", key=f"cancel_delete_{prompt.id}"):
+                        st.session_state.delete_confirmation = None
+                        st.rerun()
+                else:
+                    if st.button("Delete", key=f"delete_{prompt.id}"):
+                        st.session_state.delete_confirmation = prompt.id
+                        st.rerun()
 
 def show_create_page():
     st.header("Create New Prompt")
@@ -73,10 +103,13 @@ def show_create_page():
     if st.button("Save Prompt"):
         try:
             # Validate JSON format for example values
-            json.loads(example_values)
+            validate_example_values = json.loads(example_values)
             
             # Validate Jinja template
-            Template(template)
+            validate_template = Template(template)
+            
+            # Validate example values for each template value:
+            validate_template.render(validate_example_values)
             
             prompt = Prompt(
                 id=editing_prompt.id if editing_prompt else None,
@@ -89,16 +122,17 @@ def show_create_page():
             
             if editing_prompt:
                 update_prompt(prompt)
+                st.success("Prompt updated successfully!")
             else:
                 save_prompt(prompt)
+                st.success("Prompt saved successfully!")
                 
-            st.success("Prompt saved successfully!")
             st.session_state.editing_prompt = None
-            st.rerun()
             
         except json.JSONDecodeError:
             st.error("Invalid JSON format in example values")
         except Exception as e:
+            raise e
             st.error(f"Error: {str(e)}")
 
 def get_template_variables(template_str: str) -> List[str]:
