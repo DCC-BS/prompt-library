@@ -2,11 +2,11 @@ llm_endpoints:
   - name: "Llama 3.2 3b"
     url: "http://pappai01.bs.ch:11434/api/generate"
     model: "llama3.2:latest"
-    description: "KI Plattform LLama 3.2 3b"
+    description: "KI Plattform LLama 3.2 3b. https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct"
 
   - name: "LLama 3.1 70b"
     url: "http://pappai01.bs.ch:11434/api/generate"
-    description: "KI Plattform LLama 3.1 70b"
+    description: "KI Plattform LLama 3.1 70b. https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct"
     model: "llama3.1:70b"
 
   # - name: "LLama 3.1 Nemotron 70b"
@@ -16,45 +16,55 @@ llm_endpoints:
 
   - name: "Gemma 2 27b"
     url: "http://pappai01.bs.ch:11434/api/generate"
-    description: "KI Plattform Gemma 2 27b"
+    description: "KI Plattform Gemma 2 27b. https://huggingface.co/google/gemma-2-27b-it"
     model: "gemma2:27b"
 
   - name: "Qwen 2.5 0.5b"
     url: "http://pappai01.bs.ch:11434/api/generate"
-    description: "KI Plattform Qwen 2.5 0.5b"
+    description: "KI Plattform Qwen 2.5 0.5b. https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct"
     model: "qwen2.5:0.5b"
 
   - name: "Qwen 2.5 1.5b"
     url: "http://pappai01.bs.ch:11434/api/generate"
-    description: "KI Plattform Qwen 2.5 1.5b"
+    description: "KI Plattform Qwen 2.5 1.5b. https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct"
     model: "qwen2.5:1.5b"
 
   - name: "Qwen 2.5 7b"
     url: "http://pappai01.bs.ch:11434/api/generate"
-    description: "KI Plattform Qwen 2.5 7b"
+    description: "KI Plattform Qwen 2.5 7b. https://huggingface.co/Qwen/Qwen2.5-7B-Instruct"
     model: "qwen2.5:7b"
 
   - name: "Qwen 2.5 14b"
     url: "http://pappai01.bs.ch:11434/api/generate"
-    description: "KI Plattform Qwen 2.5 14b"
+    description: "KI Plattform Qwen 2.5 14b. https://huggingface.co/Qwen/Qwen2.5-14B-Instruct"
     model: "qwen2.5:14b"
 
   - name: "Qwen 2.5 32b"
     url: "http://pappai01.bs.ch:11434/api/generate"
-    description: "KI Plattform Qwen 2.5 32b"
+    description: "KI Plattform Qwen 2.5 32b. https://huggingface.co/Qwen/Qwen2.5-32B-Instruct"
     model: "qwen2.5:32b"
 
   - name: "Qwen 2.5 72b"
     url: "http://pappai01.bs.ch:11434/api/generate"
-    description: "KI Plattform Qwen 2.5 72b"
+    description: "KI Plattform Qwen 2.5 72b. https://huggingface.co/Qwen/Qwen2.5-72B-Instruct"
     model: "qwen2.5:72b"
 
   - name: "Aya Expanse 8b"
     url: "http://pappai01.bs.ch:11434/api/generate"
-    description: "KI Plattform Aya Expanse 8b"
+    description: "KI Plattform Aya Expanse 8b. https://huggingface.co/CohereForAI/aya-expanse-8b"
     model: "aya-expanse:8b"
 
   - name: "Aya Expanse 32b"
     url: "http://pappai01.bs.ch:11434/api/generate"
-    description: "KI Plattform Aya Expanse 32b"
+    description: "KI Plattform Aya Expanse 32b. https://huggingface.co/CohereForAI/aya-expanse-32b"
     model: "aya-expanse:32b"
+
+  - name: "Mistral 7b"
+    url: "http://pappai01.bs.ch:11434/api/generate"
+    description: "KI Plattform Mistral 7b. https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3"
+    model: "mistral:7b"
+
+  - name: "Mixtral 8x7b"
+    url: "http://pappai01.bs.ch:11434/api/generate"
+    description: "KI Plattform Mixtral 7b. https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1"
+    model: "mixtral:latest"
