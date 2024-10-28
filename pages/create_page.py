@@ -1,5 +1,5 @@
 import json
-
+import asyncio
 import streamlit as st
 from jinja2 import Template
 
@@ -8,12 +8,23 @@ from db_operations import (
     save_prompt,
     update_prompt,
 )
-from utils import validate_variables_with_template
+from utils import (
+    validate_variables_with_template,
+    get_template_variables,
+    test_multiple_models,
+)
+from config_handler import ConfigHandler
+
+config = ConfigHandler()
+MAX_ENDPOINTS = 3
 
 
 def show_create_page():
     st.header("Create New Prompt")
-
+    _create_section()
+    _test_section()
+    
+def _create_section():
     editing_prompt = st.session_state.get("editing_prompt")
 
     name = st.text_input(
@@ -22,26 +33,27 @@ def show_create_page():
     author = st.text_input(
         "Author", value=editing_prompt.author if editing_prompt else ""
     )
-    template = st.text_area(
+    st.session_state["creation_template"] = st.text_area(
         "Prompt Template (Use {{variable}} for template variables)",
-        value=editing_prompt.template if editing_prompt else "",
+        value=editing_prompt.template if editing_prompt else ""
     )
-    example_values = st.text_area(
-        "Example Values (JSON format)",
-        value=editing_prompt.example_values if editing_prompt else "{}",
-    )
+
+    variables = get_template_variables(st.session_state["creation_template"])
+
+    st.session_state["template_values"] = {}
+    if editing_prompt:
+        default_values = json.loads(editing_prompt.example_values)
+    for var in variables:
+        st.session_state["template_values"][var] = st.text_input(f"Value for {var}", value=default_values.get(var, ""))
 
     if st.button("Save Prompt"):
         try:
-            # Validate JSON format for example values
-            json.loads(example_values)
-
             # Validate Jinja template
-            Template(template)
+            Template(st.session_state["creation_template"])
 
             # Validate example values for each template value:
             is_valid, missing = validate_variables_with_template(
-                example_values, template
+                st.session_state["template_values"], st.session_state["creation_template"]
             )
             if not is_valid:
                 st.error(f"❌ Missing variable {missing} in input.")
@@ -51,8 +63,8 @@ def show_create_page():
                 id=editing_prompt.id if editing_prompt else None,
                 name=name,
                 author=author,
-                template=template,
-                example_values=example_values,
+                template=st.session_state["creation_template"],
+                example_values=json.dumps(st.session_state["template_values"], ensure_ascii=False),
                 upvotes=editing_prompt.upvotes if editing_prompt else 0,
             )
 
@@ -69,3 +81,73 @@ def show_create_page():
             st.error("❌ Invalid JSON format in example values")
         except Exception as e:
             st.error(f"❌ Error: {str(e)}")
+
+def _test_section():
+    if template:= st.session_state["creation_template"]:
+        
+        st.divider()
+        st.subheader("Test Prompt")
+
+        try:
+            available_endpoints = config.endpoints
+
+            if not available_endpoints:
+                st.error(
+                    "❌ No LLM endpoints configured. Please check your config.yaml file."
+                )
+            else:
+                variables = get_template_variables(st.session_state["creation_template"])
+                values = {}
+                for var in variables:
+                    values[var] = st.session_state["template_values"][var]
+
+                # Endpoint selection
+                selected_names = st.multiselect(
+                    "Choose one or more endpoints to test with:",
+                    options=[endpoint.name for endpoint in available_endpoints],
+                    max_selections=MAX_ENDPOINTS,
+                    help="Select the LLM endpoints you want to test your prompt with",
+                )
+
+                selected_endpoints = [
+                    endpoint
+                    for endpoint in available_endpoints
+                    if endpoint.name in selected_names
+                ]
+
+                if st.button("🧪 Test Prompt") and selected_endpoints:
+                    try:
+                        is_valid, missing = validate_variables_with_template(
+                            values, template
+                        )
+                        if not is_valid:
+                            st.error(f"❌ Missing value {missing} in input.")
+                            return
+
+                        template_obj = Template(template)
+                        rendered_prompt = template_obj.render(**values)
+
+                        st.subheader("Rendered Prompt")
+                        st.markdown(rendered_prompt)
+
+                        results = asyncio.run(
+                            test_multiple_models(
+                                [endpoint.url for endpoint in selected_endpoints],
+                                rendered_prompt,
+                                [endpoint.model for endpoint in selected_endpoints],
+                            )
+                        )
+
+                        st.subheader("Results")
+                        for endpoint, response in zip(
+                            selected_endpoints, results.values()
+                        ):
+                            st.write(f"**{endpoint.name}:**")
+                            st.write(response)
+                            st.markdown("---")
+
+                    except Exception as e:
+                        st.error(f"❌ Error: {str(e)}")
+
+        except Exception as e:
+            st.error(f"❌ Error in test prompt section: {str(e)}")
