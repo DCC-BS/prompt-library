@@ -6,7 +6,7 @@ import streamlit as st
 from jinja2 import Template
 
 from config_handler import ConfigHandler
-from db_operations import get_all_prompts
+from db_operations import get_latest_versions, get_prompt_versions
 from utils import (
     get_template_variables,
     test_multiple_models,
@@ -14,7 +14,7 @@ from utils import (
 )
 
 config = ConfigHandler()
-MAX_ENDPOINTS = 3
+MAX_ENDPOINTS = 5
 
 
 def show_test_page():
@@ -26,12 +26,26 @@ def show_test_page():
         st.error("❌ No LLM endpoints configured. Please check your config.yaml file.")
         return
 
-    prompts = get_all_prompts()
+    prompts = get_latest_versions()
     selected_prompt = st.selectbox(
-        "Select a prompt to test", options=prompts, format_func=lambda x: x.name
+        "Select a prompt to test", 
+        options=prompts, 
+        format_func=lambda x: f"{x.name} (v{x.version})"
     )
 
     if selected_prompt:
+        versions = get_prompt_versions(selected_prompt.id)
+
+        version_options = [f"Version {v.version} ({v.created_at})" for v in versions]
+        selected_version_idx = st.selectbox(
+            "Select version:",
+            range(len(version_options)),
+            format_func=lambda x: version_options[x],
+            key=f"version_select_{selected_prompt.id}"
+        )
+        
+        selected_prompt = versions[selected_version_idx]
+
         col1, col2 = st.columns([4, 1])
         with col1:
             st.subheader("Template")

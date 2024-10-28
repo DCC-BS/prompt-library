@@ -8,52 +8,66 @@ from db_operations import (
     delete_prompt,
     get_all_prompts,
     upvote_prompt,
+    get_prompt_versions,
+    get_latest_versions,
 )
 from pages.create_page import show_create_page
 
 
 def show_browse_page():
     st.header("Browse Prompts")
-    prompts = get_all_prompts()
+    prompts = get_latest_versions()
 
     if "delete_confirmation" not in st.session_state:
         st.session_state.delete_confirmation = None
 
     for prompt in prompts:
-        with st.expander(f"{prompt.name} by {prompt.author} (👍 {prompt.upvotes})"):
+        with st.expander(f"{prompt.name} by {prompt.author} (👍 {prompt.upvotes}) - v{prompt.version}"):
+            versions = get_prompt_versions(prompt.id)
+
+            version_options = [f"Version {v.version} ({v.created_at})" for v in versions]
+            selected_version_idx = st.selectbox(
+                "Select version:",
+                range(len(version_options)),
+                format_func=lambda x: version_options[x],
+                key=f"version_select_{prompt.id}"
+            )
+
+            selected_prompt = versions[selected_version_idx]
+
             md_text = (
                 "## Template\n"
-                f"{prompt.template}\n"
+                f"{selected_prompt.template}\n"
                 "## Example Values\n"
-                f"`{prompt.example_values}`"
+                f"`{selected_prompt.example_values}`"
             )
             st.markdown(md_text)
 
             col1, col2, col3, col4 = st.columns(4)
             with col1:
-                if st.button("👍 Upvote", key=f"upvote_{prompt.id}"):
-                    upvote_prompt(prompt.id)
+                if st.button("👍 Upvote", key=f"upvote_{selected_prompt.id}"):
+                    upvote_prompt(selected_prompt.id)
                     st.success("✅ Upvote recorded!")
             with col2:
-                if st.button("✏️ Edit", key=f"edit_{prompt.id}"):
-                    st.session_state.editing_prompt = prompt
+                if st.button("✏️ Edit", key=f"edit_{selected_prompt.id}"):
+                    st.session_state.editing_prompt = selected_prompt
                     st.switch_page(st.Page(show_create_page))
             with col3:
-                if st.session_state.delete_confirmation == prompt.id:
-                    if st.button("❗ Confirm Delete", key=f"confirm_delete_{prompt.id}"):
-                        delete_prompt(prompt.id)
+                if st.session_state.delete_confirmation == selected_prompt.id:
+                    if st.button("❗ Confirm Delete", key=f"confirm_delete_{selected_prompt.id}"):
+                        delete_prompt(selected_prompt.id)
                         st.session_state.delete_confirmation = None
                         st.success("✅ Prompt deleted successfully!")
                         time.sleep(1)
                         st.rerun()
-                    if st.button("Cancel", key=f"cancel_delete_{prompt.id}"):
+                    if st.button("Cancel", key=f"cancel_delete_{selected_prompt.id}"):
                         st.session_state.delete_confirmation = None
                         st.rerun()
                 else:
-                    if st.button("🗑️ Delete", key=f"delete_{prompt.id}"):
-                        st.session_state.delete_confirmation = prompt.id
+                    if st.button("🗑️ Delete", key=f"delete_{selected_prompt.id}"):
+                        st.session_state.delete_confirmation = selected_prompt.id
                         st.rerun()
             with col4:
-                if st.button("📑 Copy Prompt", key=f"copy_{prompt.id}"):
-                    clipboard.copy(prompt.template)
+                if st.button("📑 Copy Prompt", key=f"copy_{selected_prompt.id}"):
+                    clipboard.copy(selected_prompt.template)
                     st.success("✅Copied to clipboard!")

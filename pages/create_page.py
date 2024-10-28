@@ -7,6 +7,7 @@ from db_operations import (
     Prompt,
     save_prompt,
     update_prompt,
+    get_prompt_versions
 )
 from utils import (
     validate_variables_with_template,
@@ -16,7 +17,7 @@ from utils import (
 from config_handler import ConfigHandler
 
 config = ConfigHandler()
-MAX_ENDPOINTS = 3
+MAX_ENDPOINTS = 5
 
 
 def show_create_page():
@@ -28,6 +29,12 @@ def show_create_page():
 def _create_section():
     editing_prompt = st.session_state.get("editing_prompt")
 
+    if editing_prompt:
+        st.info(f"Editing prompt: {editing_prompt.name} (Version {editing_prompt.version})")
+        versions = get_prompt_versions(editing_prompt.id)
+        if len(versions) > 1:
+            st.info(f"This prompt has {len(versions)} versions")
+
     name = st.text_input(
         "Prompt Name", value=editing_prompt.name if editing_prompt else ""
     )
@@ -37,13 +44,13 @@ def _create_section():
     st.session_state["creation_template"] = st.text_area(
         "Prompt Template (Use {{variable}} for template variables)",
         value=editing_prompt.template if editing_prompt else "",
+        help="See Jinja for template guidance: https://jinja.palletsprojects.com/en/stable/templates/#synopsis "
     )
 
     variables = get_template_variables(st.session_state["creation_template"])
 
     st.session_state["template_values"] = {}
-    if editing_prompt:
-        default_values = json.loads(editing_prompt.example_values)
+    default_values = json.loads(editing_prompt.example_values) if editing_prompt else {}
     for var in variables:
         st.session_state["template_values"][var] = st.text_input(
             f"Value for {var}", value=default_values.get(var, "")
@@ -74,9 +81,22 @@ def _create_section():
                 upvotes=editing_prompt.upvotes if editing_prompt else 0,
             )
 
+            prompt = Prompt(
+                id=editing_prompt.id if editing_prompt else None,
+                name=name,
+                author=author,
+                template=st.session_state["creation_template"],
+                example_values=json.dumps(
+                    st.session_state["template_values"], ensure_ascii=False
+                ),
+                upvotes=editing_prompt.upvotes if editing_prompt else 0, # Version inherit the upvotes
+                version=1 if not editing_prompt else None,  # Version will be set in update_prompt
+                parent_id=None if not editing_prompt else editing_prompt.id
+            )
+
             if editing_prompt:
                 update_prompt(prompt)
-                st.success("✅ Prompt updated successfully!")
+                st.success("✅ New version successfully!")
             else:
                 save_prompt(prompt)
                 st.success("✅ Prompt saved successfully!")
