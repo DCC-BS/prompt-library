@@ -23,7 +23,8 @@ def show_create_page():
     st.header("Create New Prompt")
     _create_section()
     _test_section()
-    
+
+
 def _create_section():
     editing_prompt = st.session_state.get("editing_prompt")
 
@@ -35,7 +36,7 @@ def _create_section():
     )
     st.session_state["creation_template"] = st.text_area(
         "Prompt Template (Use {{variable}} for template variables)",
-        value=editing_prompt.template if editing_prompt else ""
+        value=editing_prompt.template if editing_prompt else "",
     )
 
     variables = get_template_variables(st.session_state["creation_template"])
@@ -44,7 +45,9 @@ def _create_section():
     if editing_prompt:
         default_values = json.loads(editing_prompt.example_values)
     for var in variables:
-        st.session_state["template_values"][var] = st.text_input(f"Value for {var}", value=default_values.get(var, ""))
+        st.session_state["template_values"][var] = st.text_input(
+            f"Value for {var}", value=default_values.get(var, "")
+        )
 
     if st.button("Save Prompt"):
         try:
@@ -53,7 +56,8 @@ def _create_section():
 
             # Validate example values for each template value:
             is_valid, missing = validate_variables_with_template(
-                st.session_state["template_values"], st.session_state["creation_template"]
+                st.session_state["template_values"],
+                st.session_state["creation_template"],
             )
             if not is_valid:
                 st.error(f"❌ Missing variable {missing} in input.")
@@ -64,7 +68,9 @@ def _create_section():
                 name=name,
                 author=author,
                 template=st.session_state["creation_template"],
-                example_values=json.dumps(st.session_state["template_values"], ensure_ascii=False),
+                example_values=json.dumps(
+                    st.session_state["template_values"], ensure_ascii=False
+                ),
                 upvotes=editing_prompt.upvotes if editing_prompt else 0,
             )
 
@@ -82,9 +88,9 @@ def _create_section():
         except Exception as e:
             st.error(f"❌ Error: {str(e)}")
 
+
 def _test_section():
-    if template:= st.session_state["creation_template"]:
-        
+    if template := st.session_state["creation_template"]:
         st.divider()
         st.subheader("Test Prompt")
 
@@ -96,7 +102,9 @@ def _test_section():
                     "❌ No LLM endpoints configured. Please check your config.yaml file."
                 )
             else:
-                variables = get_template_variables(st.session_state["creation_template"])
+                variables = get_template_variables(
+                    st.session_state["creation_template"]
+                )
                 values = {}
                 for var in variables:
                     values[var] = st.session_state["template_values"][var]
