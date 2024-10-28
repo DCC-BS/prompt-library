@@ -1,14 +1,16 @@
 
 import time
 
+import clipboard
 import streamlit as st
 
-from pages.create_page import show_create_page
 from db_operations import (
     delete_prompt,
     get_all_prompts,
     upvote_prompt,
 )
+from pages.create_page import show_create_page
+
 
 def show_browse_page():
     st.header("Browse Prompts")
@@ -27,27 +29,31 @@ def show_browse_page():
             )
             st.markdown(md_text)
 
-            col1, col2, col3 = st.columns(3)
+            col1, col2, col3, col4 = st.columns(4)
             with col1:
-                if st.button("Upvote", key=f"upvote_{prompt.id}"):
+                if st.button("👍 Upvote", key=f"upvote_{prompt.id}"):
                     upvote_prompt(prompt.id)
-                    st.success("Upvote recorded!")
+                    st.success("✅ Upvote recorded!")
             with col2:
-                if st.button("Edit", key=f"edit_{prompt.id}"):
+                if st.button("✏️ Edit", key=f"edit_{prompt.id}"):
                     st.session_state.editing_prompt = prompt
                     st.switch_page(st.Page(show_create_page))
             with col3:
                 if st.session_state.delete_confirmation == prompt.id:
-                    if st.button("Confirm Delete", key=f"confirm_delete_{prompt.id}"):
+                    if st.button("❗ Confirm Delete", key=f"confirm_delete_{prompt.id}"):
                         delete_prompt(prompt.id)
                         st.session_state.delete_confirmation = None
-                        st.success("Prompt deleted successfully!")
+                        st.success("✅ Prompt deleted successfully!")
                         time.sleep(1)
                         st.rerun()
                     if st.button("Cancel", key=f"cancel_delete_{prompt.id}"):
                         st.session_state.delete_confirmation = None
                         st.rerun()
                 else:
-                    if st.button("Delete", key=f"delete_{prompt.id}"):
+                    if st.button("🗑️ Delete", key=f"delete_{prompt.id}"):
                         st.session_state.delete_confirmation = prompt.id
                         st.rerun()
+            with col4:
+                if st.button("📑 Copy Prompt", key=f"copy_{prompt.id}"):
+                    clipboard.copy(prompt.template)
+                    st.success("✅Copied to clipboard!")

@@ -44,7 +44,7 @@ def show_create_page():
                 example_values, template
             )
             if not is_valid:
-                st.error(f"Missing variable {missing} in input.")
+                st.error(f"❌ Missing variable {missing} in input.")
                 return
 
             prompt = Prompt(
@@ -58,14 +58,14 @@ def show_create_page():
 
             if editing_prompt:
                 update_prompt(prompt)
-                st.success("Prompt updated successfully!")
+                st.success("✅ Prompt updated successfully!")
             else:
                 save_prompt(prompt)
-                st.success("Prompt saved successfully!")
+                st.success("✅ Prompt saved successfully!")
 
             st.session_state.editing_prompt = None
 
         except json.JSONDecodeError:
-            st.error("Invalid JSON format in example values")
+            st.error("❌ Invalid JSON format in example values")
         except Exception as e:
-            st.error(f"Error: {str(e)}")
+            st.error(f"❌ Error: {str(e)}")

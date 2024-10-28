@@ -1,6 +1,7 @@
 import asyncio
 import json
 
+import clipboard
 import streamlit as st
 from jinja2 import Template
 
@@ -22,7 +23,7 @@ def show_test_page():
     available_endpoints = config.endpoints
 
     if not available_endpoints:
-        st.error("No LLM endpoints configured. Please check your config.yaml file.")
+        st.error("❌ No LLM endpoints configured. Please check your config.yaml file.")
         return
 
     prompts = get_all_prompts()
@@ -31,8 +32,14 @@ def show_test_page():
     )
 
     if selected_prompt:
-        st.subheader("Template")
-        st.text(selected_prompt.template)
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            st.subheader("Template")
+        with col2:
+            if st.button("📑 Copy Prompt"):
+                clipboard.copy(selected_prompt.template)
+                st.success("✅ Copied to clipboard!")
+        st.markdown(selected_prompt.template)
 
         variables = get_template_variables(selected_prompt.template)
         example_variables_input = json.loads(selected_prompt.example_values)
@@ -70,13 +77,13 @@ def show_test_page():
                     st.write(f"**URL:** {endpoint.url}")
                     st.write(f"**Description:** {endpoint.description}")
 
-        if st.button("Test Prompt") and selected_endpoints:
+        if st.button("🚀 Test Prompt") and selected_endpoints:
             try:
                 is_valid, missing = validate_variables_with_template(
                     values, selected_prompt.template
                 )
                 if not is_valid:
-                    st.error(f"Missing value {missing} in input.")
+                    st.error(f"❌ Missing value {missing} in input.")
                     return
 
                 # Render template with provided values
@@ -84,7 +91,7 @@ def show_test_page():
                 rendered_prompt = template.render(**values)
 
                 st.subheader("Rendered Prompt")
-                st.text(rendered_prompt)
+                st.markdown(rendered_prompt)
 
                 results = asyncio.run(
                     test_multiple_models(
@@ -101,4 +108,4 @@ def show_test_page():
                     st.markdown("---")
 
             except Exception as e:
-                st.error(f"Error: {str(e)}")
+                st.error(f"❌ Error: {str(e)}")
