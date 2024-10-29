@@ -10,8 +10,10 @@ from db_operations import get_latest_versions, get_prompt_versions, get_test_cas
 from utils import (
     get_template_variables,
     test_multiple_models,
+    test_prompt_with_model,
     validate_variables_with_template,
-    evaluate_test_case
+    evaluate_test_case,
+    compare_strings_with_llm_judge,
 )
 
 config = ConfigHandler()
@@ -29,13 +31,17 @@ def show_test_page():
 
     prompts = get_latest_versions()
     selected_prompt = st.selectbox(
-        "Select a prompt to test", 
-        options=prompts, 
-        format_func=lambda x: f"{x.name} (v{x.version})"
+        "Select a prompt to test",
+        options=prompts,
+        format_func=lambda x: f"{x.name} (v{x.version})",
     )
 
     if selected_prompt:
-        p_id = selected_prompt.parent_id if selected_prompt.parent_id else selected_prompt.id
+        p_id = (
+            selected_prompt.parent_id
+            if selected_prompt.parent_id
+            else selected_prompt.id
+        )
         test_cases = get_test_cases(p_id)
 
         versions = get_prompt_versions(selected_prompt.id)
@@ -45,9 +51,9 @@ def show_test_page():
             "Select version:",
             range(len(version_options)),
             format_func=lambda x: version_options[x],
-            key=f"version_select_{selected_prompt.id}"
+            key=f"version_select_{selected_prompt.id}",
         )
-        
+
         selected_prompt = versions[selected_version_idx]
 
         col1, col2 = st.columns([4, 1])
@@ -132,7 +138,7 @@ def show_test_page():
                         input_values = json.loads(test_case.input_values)
                         template = Template(selected_prompt.template)
                         test_prompt = template.render(**input_values)
-                        
+
                         test_results = asyncio.run(
                             test_multiple_models(
                                 [endpoint.url for endpoint in selected_endpoints],
@@ -140,18 +146,35 @@ def show_test_page():
                                 [endpoint.model for endpoint in selected_endpoints],
                             )
                         )
-                        
-                        for endpoint, response in zip(selected_endpoints, test_results.values()):
-                            passed = evaluate_test_case(response, test_case.expected_output)
-                            status = "✅ PASSED" if passed else "❌ FAILED"
+
+                        for endpoint, response in zip(
+                            selected_endpoints, test_results.values()
+                        ):
+                            passed = evaluate_test_case(
+                                response, test_case.expected_output
+                            )
+                            llm_judge_score = asyncio.run(compare_strings_with_llm_judge(
+                                llm_output=response,
+                                expected_output=test_case.expected_output,
+                                original_instruction=test_prompt,
+                                test_prompt_func=test_prompt_with_model,
+                                url=available_endpoints[1].url,
+                                model=available_endpoints[1].model,
+                            ))
                             
-                            with st.expander(f"{endpoint.name} - {status}"):
+                            status = "✅ PASSED" if passed else "❌ FAILED"
+
+                            with st.expander(
+                                f"{endpoint.name} - LLM Judge Score {llm_judge_score} - {status}"
+                            ):
                                 st.write("**Input:**")
                                 st.json(input_values)
                                 st.write("**Expected Output:**")
                                 st.write(test_case.expected_output)
                                 st.write("**Actual Output:**")
                                 st.write(response)
+                                st.write("**LLM as a Judge Score:**")
+                                st.write(llm_judge_score)
 
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
