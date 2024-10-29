@@ -43,3 +43,7 @@ def validate_variables_with_template(values: dict, template_str: str) -> Tuple[b
         if template_var not in values.keys() or values[template_var] == '' or values[template_var] is None:
             return False, template_var
     return True, ""
+
+
+def evaluate_test_case(llm_output: str, expected_output: str) -> bool:
+    return llm_output.strip().lower() == expected_output.strip().lower()

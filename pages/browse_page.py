@@ -6,7 +6,6 @@ import streamlit as st
 
 from db_operations import (
     delete_prompt,
-    get_all_prompts,
     upvote_prompt,
     get_prompt_versions,
     get_latest_versions,

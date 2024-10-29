@@ -6,11 +6,12 @@ import streamlit as st
 from jinja2 import Template
 
 from config_handler import ConfigHandler
-from db_operations import get_latest_versions, get_prompt_versions
+from db_operations import get_latest_versions, get_prompt_versions, get_test_cases
 from utils import (
     get_template_variables,
     test_multiple_models,
     validate_variables_with_template,
+    evaluate_test_case
 )
 
 config = ConfigHandler()
@@ -34,6 +35,9 @@ def show_test_page():
     )
 
     if selected_prompt:
+        p_id = selected_prompt.parent_id if selected_prompt.parent_id else selected_prompt.id
+        test_cases = get_test_cases(p_id)
+
         versions = get_prompt_versions(selected_prompt.id)
 
         version_options = [f"Version {v.version} ({v.created_at})" for v in versions]
@@ -120,6 +124,34 @@ def show_test_page():
                     st.write(f"**{endpoint.name}:**")
                     st.write(response)
                     st.markdown("---")
+
+                if test_cases:
+                    st.subheader("Test Case Results")
+                    for i, test_case in enumerate(test_cases):
+                        st.write(f"**Test Case {i+1}:**")
+                        input_values = json.loads(test_case.input_values)
+                        template = Template(selected_prompt.template)
+                        test_prompt = template.render(**input_values)
+                        
+                        test_results = asyncio.run(
+                            test_multiple_models(
+                                [endpoint.url for endpoint in selected_endpoints],
+                                test_prompt,
+                                [endpoint.model for endpoint in selected_endpoints],
+                            )
+                        )
+                        
+                        for endpoint, response in zip(selected_endpoints, test_results.values()):
+                            passed = evaluate_test_case(response, test_case.expected_output)
+                            status = "✅ PASSED" if passed else "❌ FAILED"
+                            
+                            with st.expander(f"{endpoint.name} - {status}"):
+                                st.write("**Input:**")
+                                st.json(input_values)
+                                st.write("**Expected Output:**")
+                                st.write(test_case.expected_output)
+                                st.write("**Actual Output:**")
+                                st.write(response)
 
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
