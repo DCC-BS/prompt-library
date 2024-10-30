@@ -38,62 +38,83 @@ def show_design_prompt_page():
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    # Task Description
-    st.subheader("Task Description")
-    task_description = st.text_area(
-        "Describe what you want to achieve with this prompt:",
-        help="Provide a clear description of the task this prompt should accomplish",
+    st.subheader("Upload Task Description and Test Cases")
+
+    # Add download link for example JSON
+    example_json = {
+        "task_description": "Convert the given number into its roman numeral representation",
+        "test_cases": [
+            {"input_json": '{"number": 9}', "expected_output": "IX"},
+            {"input_json": '{"number": 58}', "expected_output": "LVIII"},
+        ],
+    }
+    st.download_button(
+        "Download Example JSON",
+        data=json.dumps(example_json, indent=4),
+        file_name="example_input.json",
+        mime="application/json",
     )
 
-    # Test case input section
-    st.subheader("Test Cases")
+    uploaded_file = st.file_uploader(
+        "Upload JSON file with task description and test cases",
+        type=["json"],
+        help="Upload a JSON file containing task description and test cases. Click 'Download Example JSON' to see the required format.",
+    )
 
-    # Display existing test cases
-    for i, test_case in enumerate(st.session_state.test_cases):
-        with st.expander(f"Test Case {i+1}"):
-            updated_input = st.text_area(
-                "Input (JSON)", value=test_case.input_json, key=f"test_input_{i}"
-            )
-            updated_output = st.text_area(
-                "Expected Output", value=test_case.expected_output, key=f"expected_{i}"
-            )
+    if uploaded_file is not None:
+        try:
+            data = json.load(uploaded_file)
+            task_description = data.get("task_description")
+            test_cases_data = data.get("test_cases", [])
 
-            # Update test case if changed
-            if (
-                updated_input != test_case.input_json
-                or updated_output != test_case.expected_output
-            ):
-                try:
-                    # Validate JSON
-                    json.loads(updated_input)
-                    st.session_state.test_cases[i] = TestCase(
-                        input_json=updated_input, expected_output=updated_output
-                    )
-                except json.JSONDecodeError:
-                    st.error("Invalid JSON format in input")
+            # Validate the uploaded JSON structure
+            if not task_description:
+                st.error("Task description is missing in the JSON file")
+                return
 
-            if st.button("Delete", key=f"delete_{i}"):
-                st.session_state.test_cases.pop(i)
-                st.rerun()
+            if not test_cases_data:
+                st.error("No test cases found in the JSON file")
+                return
 
-    # Add new test case
-    with st.expander("Add New Test Case"):
-        input_json = st.text_area("Input (JSON)")
-        expected_output = st.text_area("Expected Output")
-
-        if st.button("Add Test Case"):
-            try:
-                # Validate JSON
-                json.loads(input_json)
-
-                new_test_case = TestCase(
-                    input_json=input_json, expected_output=expected_output
+            # Convert the test cases data to TestCase objects
+            st.session_state.test_cases = [
+                TestCase(
+                    input_json=test_case["input_json"],
+                    expected_output=test_case["expected_output"],
                 )
-                st.session_state.test_cases.append(new_test_case)
-                st.success("Test case added successfully!")
-                st.rerun()
-            except json.JSONDecodeError:
-                st.error("Invalid JSON format in input")
+                for test_case in test_cases_data
+            ]
+
+            # Display the loaded task description
+            st.subheader("Task Description")
+            st.write(task_description)
+
+            # Display loaded test cases
+            st.subheader("Loaded Test Cases")
+            for i, test_case in enumerate(st.session_state.test_cases):
+                with st.expander(f"Test Case {i+1}"):
+                    st.text_area(
+                        "Input (JSON)",
+                        value=test_case.input_json,
+                        key=f"test_input_{i}",
+                        disabled=True,
+                    )
+                    st.text_area(
+                        "Expected Output",
+                        value=test_case.expected_output,
+                        key=f"expected_{i}",
+                        disabled=True,
+                    )
+
+        except json.JSONDecodeError:
+            st.error("Invalid JSON file format")
+            return
+        except KeyError as e:
+            st.error(f"Missing required field in JSON: {str(e)}")
+            return
+        except Exception as e:
+            st.error(f"Error processing file: {str(e)}")
+            return
 
     # Prompt design section
     if st.session_state.test_cases and task_description:
@@ -228,14 +249,21 @@ def show_design_prompt_page():
                     st.session_state.current_test_results,
                 )
             ):
-                with st.expander(f"Iteration {i+1}"):
+                average_score = sum([result["score"] for result in test_results]) / len(test_results)
+                with st.expander(f"Iteration {i+1} - Average Score: {average_score}"):
                     st.markdown("**Suggested Prompt:**")
                     st.code(prompt)
                     st.markdown("**Test Case Results:**")
-                    for j, score in enumerate(test_results):
-                        st.write(f"Test Case {j+1}: {test_results["score"]:.2f}")
-                        st.write(f"Expected: {test_results["expected"]}")
-                        st.write(f"Actual: {test_results["actual"]}")
+                    for j, test_result in enumerate(test_results):
+                        st.write(f"Test Case {j+1}: {test_result["score"]:.2f}")
+                        st.write(f"Expected: {test_result["expected"]}")
+                        st.write(f"Actual: {test_result["actual"]}")
+
+            # Reset State
+            st.session_state.test_cases = []
+            st.session_state.intermediate_prompts = []
+            st.session_state.current_test_results = []
+            st.session_state.chat_history = []
 
 
 def _create_initial_chat_history(
@@ -253,8 +281,8 @@ def _create_initial_chat_history(
     return [
         {
             "role": "system",
-            "content": """You are an expert prompt engineer. Your task is to design a prompt template that works perfectly for all given test cases.
-            You will receive a task description and test cases, and you should create a prompt template that achieves the desired results.""",
+            "content": """You are an expert prompt engineer. Your task is to design a prompt template that works perfectly for all given test cases and is as general as possible to work in scenarios outside of the provided test cases.
+            You will receive a task description and test cases, and you should create a prompt template following the Jinja2 template syntax that achieves the desired results. DO NOT include the test cases into the prompt.""",
         },
         {
             "role": "user",
@@ -265,11 +293,15 @@ Please design a prompt template that will work with the following test cases:
 {test_cases_str}
 
 Requirements:
-1. Use Jinja2 template syntax for variables (e.g. {{variable_name}})
-2. The prompt should achieve the described task
-3. Generate output exactly matching the expected output format
-4. Work consistently across all test cases
-5. Include clear instructions and context in the prompt template
+1. Use Jinja2 template syntax for variables (e.g. {{ variable_name }} )
+2. Jinja2 template variables are always surrounded with double curly brackets.
+3. The prompt should achieve the described task
+4. Generate output exactly matching the expected output format
+5. Work consistently across all test cases
+6. Include clear instructions and context in the prompt template
+7. Do not write any code or instruct the model to do so
+8. The designed prompt temlpate should be as general as possible to work outside of the provided test cases in similar scenarios
+9. DO NOT include the test cases into the prompt template, if needed come up with other examples outside of the provided test cases
 
 Provide only the prompt template, nothing else.""",
         },
@@ -300,6 +332,9 @@ Focus on:
 2. Making instructions clearer and more specific
 3. Ensuring consistent formatting
 4. Maintaining the core task requirements
+5. Keep the prompt as concise as possible
+6. Make sure you use Jinja2 template syntax for variables. Example: If the template variable name is "input", then the template using this variable is {{ input }}
+7. Do not include the test cases into the prompt template, if needed come up with other examples outside of the provided test cases.
 
 Provide only the improved prompt template, nothing else.""",
     }

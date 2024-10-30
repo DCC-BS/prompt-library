@@ -15,7 +15,7 @@ GIT_REPO = "https://github.com/opendatabs/prompt-library"
 
 
 def main():
-    st.title("Prompt Library")
+    st.title("LLM Prompt Library")
 
     init_db()
 
@@ -23,7 +23,6 @@ def main():
         st.session_state.page = "Browse Prompts"
 
     st.logo("./assets/logo.jpg", size="large")
-    st.title("LLM Prompt Library")
 
     pg = st.navigation(
         {
