@@ -17,7 +17,7 @@ async def test_prompt_with_model(url: str, prompt: str, model: str) -> str:
                     "prompt": prompt,
                     "model": model,
                     "stream": False,
-                    "options": {"num_ctx": CONTEXT_LENGTH},
+                    "options": {"num_ctx": CONTEXT_LENGTH, "temperature": 0.1, "top_p": 0.7, "top_k": 20},
                 },
             ) as response:
                 result = await response.text()
@@ -59,7 +59,7 @@ async def test_prompt_with_chat_model(
                     "messages": messages,
                     "model": model,
                     "stream": False,
-                    "options": {"num_ctx": CONTEXT_LENGTH},
+                    "options": {"num_ctx": CONTEXT_LENGTH, "temperature": 0.3, "top_p": 0.9, "top_k": 40},
                 },
             ) as response:
                 result = await response.text()
