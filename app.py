@@ -4,6 +4,7 @@ from db_operations import init_db
 from pages.browse_page import show_browse_page
 from pages.create_page import show_create_page
 from pages.test_page import show_test_page
+from pages.design_prompt_page import show_design_prompt_page
 
 
 __version__ = "1.0.0"
@@ -30,6 +31,7 @@ def main():
                 st.Page(show_browse_page, title="Browse Prompts", icon="📚"),
                 st.Page(show_create_page, title="Create New Prompt", icon="✏️"),
                 st.Page(show_test_page, title="Test Prompts", icon="🔬"),
+                st.Page(show_design_prompt_page, title="Design Prompts", icon="🫕")
             ]
         }
     )

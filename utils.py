@@ -20,6 +20,36 @@ async def test_multiple_models(urls: List[str], prompt: str, models: List[str]) 
     results = await asyncio.gather(*tasks)
     return dict(zip(models, results))
 
+async def test_prompt_with_chat_model(url: str, messages: List[dict], model: str) -> dict:
+    """
+    Send a chat request to the API endpoint.
+    
+    Args:
+        url: The API endpoint URL (will replace /generate with /chat)
+        messages: List of message dictionaries with 'role' and 'content' keys
+        model: The model identifier to use
+        
+    Returns:
+        The model's response text
+    """
+    chat_url = url.replace("/generate", "/chat")
+    
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.post(
+                chat_url,
+                json={
+                    "messages": messages,
+                    "model": model,
+                    "stream": False
+                }
+            ) as response:
+                result = await response.text()
+                response = json.loads(result)
+                return response["message"]
+        except Exception as e:
+            return f"Error: {str(e)}"
+
 def get_template_variables(template_str: str) -> List[str]:
     """Extract variable names from a Jinja2 template string"""
     env = jinja2.Environment()
