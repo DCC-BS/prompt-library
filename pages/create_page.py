@@ -27,6 +27,23 @@ MAX_ENDPOINTS = 5
 
 
 def show_create_page():
+    with st.expander("ℹ️ How to use this page", expanded=False):
+        st.markdown("""
+        **Create/Edit Prompt Page Instructions:**
+        1. Fill in prompt details:
+           - Name and author
+           - Template using Jinja2 syntax {{variable}}
+           - Example values for variables
+        2. Add test cases:
+           - Input values for the Jinja2 template in JSON format
+           - Expected output
+        3. Test your prompt:
+           - Select LLM endpoints
+           - View rendered prompt
+           - Compare responses
+        4. Save to create new prompt or version
+        """)
+
     st.header("Create New Prompt")
     _create_section()
     _test_section()

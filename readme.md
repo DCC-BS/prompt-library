@@ -20,6 +20,26 @@ A Streamlit application for creating, managing, and testing LLM (Large Language 
   - Test prompts with multiple LLM endpoints
   - Compare responses from different models
   - Real-time prompt rendering preview
+  - Create and store test cases
+  - JSON-based input/output pairs
+  - LLM judge scoring system
+  - Pass/fail status tracking
+  - Automated scoring of test case results
+  - Detailed comparison reports
+
+- **Prompt Design Assistant**
+  - Automated prompt generation and refinement
+  - Test-driven prompt development
+  - Iterative improvement based on test results
+  - LLM-powered evaluation and scoring
+  - Version tracking of design iterations
+
+- **Test Case Management**
+  - Create and store test cases
+  - JSON-based input/output pairs
+  - Automated test execution
+  - LLM judge scoring system
+  - Pass/fail status tracking
 
 ## Installation
 

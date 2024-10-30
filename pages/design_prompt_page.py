@@ -24,6 +24,24 @@ class TestCase:
 
 
 def show_design_prompt_page():
+    with st.expander("ℹ️ How to use this page", expanded=False):
+        st.markdown("""
+        **Design Prompt Page Instructions:**
+        1. Upload a JSON file containing:
+           - Task description
+           - Test cases with input/expected output pairs
+        2. Select LLM endpoints for:
+           - Prompt design (generates prompts)
+           - Testing (evaluates prompts)
+        3. The system will:
+           - Generate prompt templates iteratively
+           - Test against provided test cases
+           - Use LLM as judge to score outputs
+           - Show detailed results and improvements
+        
+        Download the example JSON to see the required format.
+        """)
+        
     st.header("Design Prompt")
 
     if "test_cases" not in st.session_state:

@@ -21,6 +21,20 @@ MAX_ENDPOINTS = 5
 
 
 def show_test_page():
+    with st.expander("ℹ️ How to use this page", expanded=False):
+        st.markdown("""
+        **Test Prompt Page Instructions:**
+        1. Select a prompt from the library
+        2. Choose specific version to test
+        3. Fill in template variables
+        4. Select up to 5 LLM endpoints for testing
+        5. View results:
+           - Rendered prompt
+           - Response from each endpoint
+           - Test case results with LLM judge scores
+           - Pass/Fail status for each test
+        """)
+
     st.header("Test Prompts")
 
     available_endpoints = config.endpoints

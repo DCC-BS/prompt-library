@@ -14,6 +14,19 @@ from pages.create_page import show_create_page
 
 
 def show_browse_page():
+    with st.expander("ℹ️ How to use this page", expanded=False):
+        st.markdown("""
+        **Browse Prompts Page Instructions:**
+        1. Browse through all available prompts in the library
+        2. Expand prompts to view details and different versions
+        3. Use the version selector to switch between prompt versions
+        4. Available actions for each prompt:
+           - Upvote (👍) useful prompts
+           - Edit (✏️) to create new versions
+           - Delete (🗑️) prompts you created
+           - Copy (📋) prompt template to clipboard
+        """)
+
     st.header("Browse Prompts")
     prompts = get_latest_versions()
 
